@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Voting Dashboard | Distributed Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="admin-layout bg-dark">
+
+    <nav class="navbar glass">
+        <div class="nav-brand">Admin Dashboard ⚡</div>
+        <div class="nav-links">
+            <a href="{{ url_for('logout') }}" class="nav-link btn-outline">Exit Admin</a>
+            <a href="{{ url_for('login') }}" class="nav-link btn-primary">Voter Portal</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <!-- Top Stats Row -->
+        <div class="stats-row">
+            <div class="stat-card glass-panel">
+                <h3>Total Registered</h3>
+                <p id="stat-registered" class="stat-value">Loading...</p>
+            </div>
+            <div class="stat-card glass-panel">
+                <h3>Total Votes Cast</h3>
+                <p id="stat-votes" class="stat-value text-accent">Loading...</p>
+            </div>
+            <div class="stat-card glass-panel">
+                <h3>Voter Turnout</h3>
+                <p id="stat-turnout" class="stat-value text-success">Loading...</p>
+            </div>
+            <div class="stat-card glass-panel flex-column-center">
+                <h3>Node Simulation</h3>
+                <button onclick="simulateFailure()" class="danger-btn" style="margin-top:0.5rem">Drop Random Node</button>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="dashboard-grid">
+            
+            <!-- System Architecture Diagram (Static) -->
+            <div class="dashboard-section glass-panel">
+                <h3 class="section-title">System Architecture Diagram</h3>
+                <div class="arch-diagram">
+                    <div class="arch-box voter">Voter Edge App</div>
+                    <div class="arch-arrow">➔ (PKI Encrypted)</div>
+                    <div class="arch-box network">Consensus Network</div>
+                    <div class="arch-arrow">➔ (Validate)</div>
+                    <div class="arch-box ledger">Distributed Ledger</div>
+                </div>
+            </div>
+
+            <!-- Vote Chart -->
+            <div class="dashboard-section glass-panel">
+                <h3 class="section-title">Live Vote Results</h3>
+                <div class="chart-container">
+                    <canvas id="voteChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Node Status / Consensus Visualization -->
+            <div class="dashboard-section glass-panel">
+                <h3 class="section-title">Network Node Status</h3>
+                <div id="nodes-container" class="nodes-grid">
+                    <!-- Dynamic rendering -->
+                </div>
+            </div>
+
+            <!-- Visual Blockchain Blocks -->
+            <div class="dashboard-section glass-panel" style="grid-column: span 2;">
+                <h3 class="section-title">Blockchain Blocks Visualization</h3>
+                <div id="blocks-container" class="blocks-flex">
+                    <!-- Dynamic rendering -->
+                </div>
+            </div>
+
+            <!-- Decentralized Ledger Table -->
+            <div class="dashboard-section glass-panel" style="grid-column: span 2;">
+                <h3 class="section-title">Cryptographic Ledger Table</h3>
+                <div class="table-responsive">
+                    <table class="ledger-table">
+                        <thead>
+                            <tr>
+                                <th>Block ID</th>
+                                <th>Block Hash</th>
+                                <th>Previous Hash</th>
+                                <th>Tx Hash (Vote)</th>
+                                <th>Verified Nodes</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledger-body">
+                           <!-- Dynamic loading -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="dashboard-section glass-panel" style="grid-column: span 2;">
+                <h3 class="section-title">System Activity Log</h3>
+                <div class="log-terminal" id="activity-log">
+                    <!-- Dynamic rendering -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Scripts for Dashboard -->
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

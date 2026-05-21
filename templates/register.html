@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Voting Registration | Distributed System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="center-layout animate-gradient">
+
+    <div class="glass-container auth-box fade-in">
+        <div class="logo-area">
+            <h1>Register Voter</h1>
+            <p>Join the secure, distributed network.</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="{{ url_for('register') }}" method="POST" class="auth-form">
+            <div class="input-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" required autocomplete="off">
+            </div>
+            
+            <div class="input-group">
+                <label for="voter_id">Voter ID</label>
+                <input type="text" id="voter_id" name="voter_id" placeholder="e.g., V1001" required autocomplete="off">
+            </div>
+            
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input type="text" id="email" name="email" required autocomplete="off">
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Password</label>
+                <!-- Using type text intentionally per requirement specs allowing simple type="text" but generally should use password -->
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="primary-btn">Register Voter</button>
+        </form>
+
+        <div class="info-block" style="margin-top: 1rem;">
+            <a href="{{ url_for('login') }}">Already registered? Login here.</a>
+        </div>
+    </div>
+
+</body>
+</html>

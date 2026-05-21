@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Voting Login | Distributed System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="center-layout animate-gradient">
+
+    <div class="glass-container auth-box fade-in">
+        <div class="logo-area">
+            <h1>Blockchain E-Vote</h1>
+            <p>Secure, Distributed, Anonymous</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error">
+            {{ error }}
+        </div>
+        {% endif %}
+        
+        {% if msg %}
+        <div class="alert alert-success" style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #6ee7b7; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center; font-weight: 600;">
+            {{ msg }}
+        </div>
+        {% endif %}
+
+        <form action="{{ url_for('login') }}" method="POST" class="auth-form">
+            <div class="input-group">
+                <label for="voter_id">Enter Voter ID</label>
+                <input type="text" id="voter_id" name="voter_id" placeholder="e.g., V1001" required autocomplete="off">
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="primary-btn">Authenticate & Proceed</button>
+            <a href="{{ url_for('register') }}" class="secondary-btn" style="display:block; margin-top: 1rem">Register New Voter</a>
+        </form>
+
+    </div>
+
+</body>
+</html>

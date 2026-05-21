@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cast Your Vote</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="animate-gradient">
+
+    <nav class="navbar glass">
+        <div class="nav-brand">Distributed E-Voting System</div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}" class="nav-link">Admin Dashboard</a>
+            <a href="{{ url_for('logout') }}" class="nav-link btn-outline">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container fade-in">
+        <div class="header-section">
+            <h2>Select Your Candidate</h2>
+            <p>Your vote will be encrypted, hashed, and distributed across multiple network nodes.</p>
+        </div>
+
+        {% if error %}
+        <div class="alert alert-error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="{{ url_for('vote') }}" method="POST" class="voting-grid">
+            {% for candidate in candidates %}
+            <label class="candidate-card glass-panel interactive">
+                <input type="radio" name="candidate" value="{{ candidate.name }}" required class="hidden-radio">
+                <div class="card-content">
+                    <div class="avatar bg-gradient"></div>
+                    <div class="details">
+                        <h3 class="candidate-name">{{ candidate.name }}</h3>
+                        <p class="candidate-party">{{ candidate.party }}</p>
+                    </div>
+                </div>
+                <div class="selection-ring"></div>
+            </label>
+            {% endfor %}
+
+            <div class="input-group" style="margin-top: 2rem; max-width: 400px; margin-left: auto; margin-right: auto; text-align: left;">
+                <label for="voting_token" style="color: white; font-weight: 600;">Enter your Voting Token:</label>
+                <input type="text" id="voting_token" name="voting_token" placeholder="Your token..." required style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white; font-size: 1.1rem; font-family: monospace; text-align: center; letter-spacing: 2px;">
+            </div>
+
+            <div class="submit-area" style="margin-top: 2rem;">
+                <button type="submit" class="primary-btn large pulsate">Encipher & Submit Vote</button>
+                <small class="secure-badge">🔒 SHA-256 Encrypted & Node Verified</small>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>
