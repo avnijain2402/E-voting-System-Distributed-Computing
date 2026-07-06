@@ -45,7 +45,7 @@ function renderBlockchain(chain) {
     container.innerHTML = "";
 
     if (!chain || chain.length === 0) {
-        container.innerHTML = "<p style='color:white;'>No blocks available</p>";
+        container.innerHTML = "<p style='color:#94a3b8;'>No blocks available</p>";
         return;
     }
 
@@ -53,22 +53,24 @@ function renderBlockchain(chain) {
     chain.sort((a, b) => a.block_id - b.block_id);
 
     chain.forEach((block, index) => {
-
-        // Create block card
         const card = document.createElement("div");
-        card.style.display = "inline-block";
-        card.style.padding = "15px";
-        card.style.margin = "10px";
-        card.style.background = "#1a1a2e";
-        card.style.border = "2px solid #00ffcc";
-        card.style.borderRadius = "10px";
-        card.style.color = "white";
-        card.style.minWidth = "180px";
+        card.className = "visual-block glass-panel fade-in";
+        
+        const tx = block.transaction || block;
+        const electionId = tx.election_id || "LEGACY_ELECTION";
+        const nodesStr = Array.isArray(block.verified_nodes) ? block.verified_nodes.join(', ') : (block.verified_nodes || "None");
 
         card.innerHTML = `
-            <b>Block ${block.block_id}</b><br>
-            <small>Hash:</small><br>${block.block_hash.substring(0, 12)}...<br>
-            <small>Prev:</small><br>${block.previous_hash.substring(0, 12)}...
+            <div class="block-header">
+                <span>📦 Block #${block.block_id}</span>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #4ade80; border: 1px solid rgba(16, 185, 129, 0.4); font-size: 0.7rem;">Verified</span>
+            </div>
+            <div class="block-body">
+                <div><span class="lbl">Hash:</span> ${block.block_hash.substring(0, 10)}...</div>
+                <div><span class="lbl">Prev:</span> ${block.previous_hash === '0' ? '0' : block.previous_hash.substring(0, 10) + '...'}</div>
+                <div><span class="lbl">Election:</span> <span style="color: #60a5fa; font-weight: bold;">${electionId}</span></div>
+                <div><span class="lbl">Nodes:</span> <span style="color: #cbd5e1;">${nodesStr}</span></div>
+            </div>
         `;
 
         container.appendChild(card);
@@ -76,9 +78,8 @@ function renderBlockchain(chain) {
         // Add arrow between blocks
         if (index < chain.length - 1) {
             const arrow = document.createElement("span");
-            arrow.innerHTML = " → ";
-            arrow.style.color = "#00ffcc";
-            arrow.style.fontSize = "20px";
+            arrow.className = "block-link-arrow";
+            arrow.innerHTML = " ➔ ";
             container.appendChild(arrow);
         }
     });
