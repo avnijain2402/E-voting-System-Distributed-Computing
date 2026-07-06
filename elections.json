@@ -1,0 +1,8 @@
+[
+    {
+        "election_id": "EL2026_01",
+        "name": "General Election 2026",
+        "status": "active",
+        "candidates": ["A", "B", "C"]
+    }
+]

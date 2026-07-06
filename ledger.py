@@ -65,18 +65,19 @@ class DistributedLedger:
     def get_all_blocks(self) -> list:
         return self.blocks
 
-    def tally_results(self) -> dict:
+    def tally_results(self, election_id: str = None) -> dict:
         """
         Iterates over the ledger blocks, decrypts votes, and tallies the current results.
+        If election_id is provided, filters to only count blocks belonging to that election.
         """
         results = {}
         for block in self.blocks:
             tx = block.get("transaction", block)
+            tx_election_id = tx.get("election_id", block.get("election_id", "LEGACY_ELECTION"))
+            if election_id and tx_election_id != election_id:
+                continue
             encrypted_vote = tx.get("encrypted_vote")
             if encrypted_vote:
                 decrypted_candidate = EncryptionModule.decrypt_vote(encrypted_vote)
-                if decrypted_candidate in results:
-                    results[decrypted_candidate] += 1
-                else:
-                    results[decrypted_candidate] = 1
+                results[decrypted_candidate] = results.get(decrypted_candidate, 0) + 1
         return results

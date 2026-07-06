@@ -1,6 +1,7 @@
 import json
 import os
 import hashlib
+import time
 from encryption import EncryptionModule
 
 class AuthenticationModule:
@@ -8,8 +9,9 @@ class AuthenticationModule:
     Handles voter registration and authentication to ensure one vote per voter.
     Uses a simple JSON file to persist voter status.
     """
-    def __init__(self, db_file="voters.json"):
+    def __init__(self, db_file="voters.json", participation_file="participation.json"):
         self.db_file = db_file
+        self.participation_file = participation_file
         self.voters = self._load_voters()
         
     def _load_voters(self) -> dict:
@@ -53,8 +55,7 @@ class AuthenticationModule:
             "email": email,
             "password": self.hash_password(password),
             "public_key": pub_key,
-            "private_key": priv_key,
-            "has_voted": False
+            "private_key": priv_key
         }
         
         self.voters["voters"].append(new_voter)
@@ -70,18 +71,44 @@ class AuthenticationModule:
         if voter["password"] != self.hash_password(password):
             return False, "Incorrect password."
             
-        if voter["has_voted"]:
-            return False, "This voter has already cast a ballot."
-            
         return True, "Authenticated successfully."
 
-    def mark_voted(self, voter_id: str):
-        """Marks the voter as having voted and saves to DB."""
-        for v in self.voters["voters"]:
-            if v["voter_id"] == voter_id:
-                v["has_voted"] = True
-                break
-        self._save_voters()
+    def has_voted_in_election(self, voter_id: str, election_id: str) -> bool:
+        """Checks if a voter has voted in a specific election."""
+        if os.path.exists(self.participation_file):
+            try:
+                with open(self.participation_file, "r") as f:
+                    data = json.load(f)
+            except json.JSONDecodeError:
+                data = {}
+        else:
+            data = {}
+            
+        voter_record = data.get(voter_id, {})
+        election_record = voter_record.get(election_id, {})
+        return election_record.get("has_voted", False)
+
+    def mark_voted(self, voter_id: str, election_id: str):
+        """Marks a voter as voted in the specified election."""
+        if os.path.exists(self.participation_file):
+            try:
+                with open(self.participation_file, "r") as f:
+                    data = json.load(f)
+            except json.JSONDecodeError:
+                data = {}
+        else:
+            data = {}
+            
+        if voter_id not in data:
+            data[voter_id] = {}
+            
+        data[voter_id][election_id] = {
+            "has_voted": True,
+            "timestamp": time.time()
+        }
+        
+        with open(self.participation_file, "w") as f:
+            json.dump(data, f, indent=4)
         
     def get_total_registered(self) -> int:
         return len(self.voters["voters"])

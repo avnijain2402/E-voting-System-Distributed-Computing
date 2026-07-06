@@ -1,5 +1,7 @@
 import time
 import secrets
+import os
+import json
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 
 from authentication import AuthenticationModule
@@ -15,11 +17,55 @@ auth_module = AuthenticationModule()
 shared_ledger = DistributedLedger()
 consensus_engine = ConsensusEngine(num_nodes=3)
 
-CANDIDATES = [
-    {"id": "c1", "name": "Candidate A", "party": "Party Alpha"},
-    {"id": "c2", "name": "Candidate B", "party": "Party Beta"},
-    {"id": "c3", "name": "Candidate C", "party": "Party Gamma"}
-]
+def get_active_election() -> dict:
+    elections_file = "elections.json"
+    if os.path.exists(elections_file):
+        try:
+            with open(elections_file, "r") as f:
+                elections = json.load(f)
+                for el in elections:
+                    if el.get("status") == "active":
+                        return el
+        except Exception:
+            pass
+    # Fallback default election
+    return {
+        "election_id": "EL2026_01",
+        "name": "General Election 2026",
+        "status": "active",
+        "candidates": ["A", "B", "C"]
+    }
+
+def get_current_election_id() -> str:
+    el = get_active_election()
+    return el.get("election_id", "EL2026_01")
+
+def get_current_candidates() -> list:
+    el = get_active_election()
+    candidates_list = el.get("candidates", [])
+    formatted_candidates = []
+    
+    party_mapping = {
+        "Candidate A": "Party Alpha",
+        "Candidate B": "Party Beta",
+        "Candidate C": "Party Gamma",
+        "A": "Party Alpha",
+        "B": "Party Beta",
+        "C": "Party Gamma"
+    }
+    
+    for idx, c in enumerate(candidates_list):
+        if isinstance(c, dict):
+            formatted_candidates.append(c)
+        else:
+            display_name = f"Candidate {c}" if len(c) == 1 else c
+            party = party_mapping.get(c, party_mapping.get(display_name, f"Party Group {idx+1}"))
+            formatted_candidates.append({
+                "id": f"c{idx+1}",
+                "name": display_name,
+                "party": party
+            })
+    return formatted_candidates
 
 @app.route("/")
 def index():
@@ -59,13 +105,17 @@ def login():
 
         is_valid, message = auth_module.authenticate(voter_id, password)
         if is_valid:
-            session["voter_id"] = voter_id
-            
-            # Generate token and store in session
-            token = secrets.token_hex(4).upper()
-            session["voting_token"] = token
-            
-            return render_template("token_display.html", token=token)
+            current_election_id = get_current_election_id()
+            if auth_module.has_voted_in_election(voter_id, current_election_id):
+                error = "You have already voted in this election."
+            else:
+                session["voter_id"] = voter_id
+                
+                # Generate token and store in session
+                token = secrets.token_hex(4).upper()
+                session["voting_token"] = token
+                
+                return render_template("token_display.html", token=token)
         else:
             error = message
             
@@ -82,21 +132,26 @@ def vote():
         return redirect(url_for("login"))
 
     voter_id = session["voter_id"]
+    current_election_id = get_current_election_id()
+    candidates = get_current_candidates()
     
-    # Check if they have voted
+    # Check if they have voted in this election
     voter = auth_module.get_voter(voter_id)
-    if not voter or voter.get("has_voted"):
-        return render_template("results.html", message="You have already cast your vote! Thank you.")
+    if not voter:
+        return redirect(url_for("login"))
+        
+    if auth_module.has_voted_in_election(voter_id, current_election_id):
+        return render_template("results.html", message="You have already cast your vote in this election! Thank you.")
 
     if request.method == "POST":
         chosen_candidate = request.form.get("candidate")
         submitted_token = request.form.get("voting_token")
         
         if submitted_token != session.get("voting_token"):
-            return render_template("vote.html", candidates=CANDIDATES, error="Invalid voting token. Please try logging in again.")
+            return render_template("vote.html", candidates=candidates, error="Invalid voting token. Please try logging in again.")
 
         if not chosen_candidate:
-            return render_template("vote.html", candidates=CANDIDATES, error="Please select a candidate.")
+            return render_template("vote.html", candidates=candidates, error="Please select a candidate.")
 
         # Cryptography
         hashed_id = EncryptionModule.hash_voter_id(voter_id)
@@ -115,7 +170,8 @@ def vote():
             "encrypted_vote": encrypted_vote,
             "timestamp": timestamp,
             "signature": signature,
-            "public_key": public_key
+            "public_key": public_key,
+            "election_id": current_election_id
         }
 
         # Send vote to distributed nodes
@@ -127,16 +183,16 @@ def vote():
             shared_ledger.add_block(transaction, approving_nodes)
             consensus_engine.log_event(f"Vote stored in ledger block. Sig: {signature[:8]}")
             
-            auth_module.mark_voted(voter_id)
+            auth_module.mark_voted(voter_id, current_election_id)
             # Remove token so it can't be reused
             session.pop("voting_token", None)
             return redirect(url_for("results", success="Your vote was successfully verified and recorded by the network."))
         else:
             consensus_engine.log_event(f"Vote rejected: node consensus failed.")
             error = "Network consensus failed. Your vote was rejected by the nodes."
-            return render_template("vote.html", candidates=CANDIDATES, error=error)
+            return render_template("vote.html", candidates=candidates, error=error)
 
-    return render_template("vote.html", candidates=CANDIDATES)
+    return render_template("vote.html", candidates=candidates)
 
 @app.route("/results")
 def results():
@@ -153,7 +209,8 @@ def dashboard():
 @app.route("/api/stats", methods=["GET"])
 def api_stats():
     total_registered = auth_module.get_total_registered()
-    current_tally = shared_ledger.tally_results()
+    current_election_id = get_current_election_id()
+    current_tally = shared_ledger.tally_results(current_election_id)
     total_votes = sum(current_tally.values())
     turnout = round((total_votes / total_registered * 100), 1) if total_registered > 0 else 0
     return jsonify({
@@ -198,7 +255,8 @@ def api_activity():
 
 @app.route("/api/votes", methods=["GET"])
 def api_votes():
-    return jsonify(shared_ledger.tally_results())
+    current_election_id = get_current_election_id()
+    return jsonify(shared_ledger.tally_results(current_election_id))
 
 @app.route("/api/toggle_node", methods=["POST"])
 def toggle_node():
